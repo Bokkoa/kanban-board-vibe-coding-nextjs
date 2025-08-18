@@ -1,0 +1,6 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+- Every single time we need to run a shadcn command, use `npx shadcn@latest`
