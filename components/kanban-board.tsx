@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, MoreHorizontal } from "lucide-react"
 import { TaskCard } from "./task-card"
+import { TaskDialog } from "./task-dialog"
 
 export interface Task {
   id: string
@@ -77,8 +78,8 @@ export function KanbanBoard() {
     {
       id: "todo",
       title: "Todo",
-      color: "bg-blue-50 dark:bg-blue-950/20",
-      borderColor: "border-blue-200 dark:border-blue-800"
+      color: "bg-slate-50 dark:bg-slate-950/20",
+      borderColor: "border-slate-200 dark:border-slate-800"
     },
     {
       id: "in-progress",
@@ -110,6 +111,25 @@ export function KanbanBoard() {
     ))
   }
 
+  const createTask = (taskData: { title: string; description: string; assignee?: string }) => {
+    const newTask: Task = {
+      id: Date.now().toString(),
+      title: taskData.title,
+      description: taskData.description,
+      status: "todo",
+      priority: "medium",
+      assignee: taskData.assignee,
+      createdAt: new Date(),
+    }
+    setTasks(prev => [...prev, newTask])
+  }
+
+  const updateTask = (taskId: string, taskData: { title: string; description: string; assignee?: string }) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, ...taskData } : task
+    ))
+  }
+
   return (
     <div className="flex gap-6 h-full min-h-[600px]">
       {columns.map((column) => (
@@ -124,9 +144,9 @@ export function KanbanBoard() {
                   <span className="text-sm text-muted-foreground bg-white/50 dark:bg-black/20 px-2 py-1 rounded-full">
                     {getTasksByStatus(column.id as Task["status"]).length}
                   </span>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {column.id === "todo" && (
+                    <TaskDialog onSave={createTask} />
+                  )}
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -140,15 +160,23 @@ export function KanbanBoard() {
                    task={task}
                    onMoveTask={moveTask}
                    onUpdateAssignee={updateAssignee}
+                   onUpdateTask={updateTask}
                  />
                ))}
               {getTasksByStatus(column.id as Task["status"]).length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">No tasks yet</p>
-                  <Button variant="ghost" size="sm" className="mt-2">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Task
-                  </Button>
+                  {column.id === "todo" && (
+                    <TaskDialog 
+                      onSave={createTask}
+                      trigger={
+                        <Button variant="ghost" size="sm" className="mt-2">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Task
+                        </Button>
+                      }
+                    />
+                  )}
                 </div>
               )}
             </CardContent>

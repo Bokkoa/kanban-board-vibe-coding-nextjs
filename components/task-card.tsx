@@ -3,44 +3,24 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreHorizontal, Calendar, ArrowRight, User, Edit2 } from "lucide-react"
 import { Task } from "./kanban-board"
+import { TaskDialog } from "./task-dialog"
+import { assignees, getAssigneeByName } from "@/lib/assignees"
 
 interface TaskCardProps {
   task: Task
   onMoveTask: (taskId: string, newStatus: Task["status"]) => void
   onUpdateAssignee: (taskId: string, assignee: string) => void
+  onUpdateTask?: (taskId: string, taskData: { title: string; description: string; assignee?: string }) => void
 }
 
-const teamMembers = [
-  "Sarah Johnson",
-  "Mike Chen", 
-  "Alex Rodriguez",
-  "Emma Wilson",
-  "David Kim",
-  "Lisa Park",
-  "Tom Anderson",
-  "Maria Garcia"
-]
-
-export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) {
+export function TaskCard({ task, onMoveTask, onUpdateAssignee, onUpdateTask }: TaskCardProps) {
   const [isEditingAssignee, setIsEditingAssignee] = useState(false)
 
-  const getPriorityColor = (priority: Task["priority"]) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-      case "low":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border-gray-200 dark:border-gray-800"
-    }
-  }
+
 
   const getNextStatus = (currentStatus: Task["status"]): Task["status"] | null => {
     switch (currentStatus) {
@@ -70,41 +50,44 @@ export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) 
   }
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-      <CardContent className="p-4">
-        <div className="space-y-4">
+         <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+       <CardContent className="p-3">
+         <div className="space-y-2">
           {/* Header with Title and Actions */}
           <div className="flex items-start justify-between">
-            <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-gray-900 dark:text-gray-100">
-              {task.title}
-            </h3>
+                         <h3 className="font-semibold text-base leading-tight line-clamp-1 text-gray-900 dark:text-gray-100">
+               {task.title}
+             </h3>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onUpdateTask && (
+                <TaskDialog 
+                  task={task}
+                  onSave={(taskData) => onUpdateTask(task.id, taskData)}
+                  trigger={
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                  }
+                />
+              )}
               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </div>
           </div>
 
-          {/* Description */}
-          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-            {task.description}
-          </p>
+                     {/* Description */}
+           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 leading-relaxed">
+             {task.description}
+           </p>
 
-          {/* Priority Badge */}
-          <div className="flex items-center justify-between">
-            <Badge 
-              variant="outline" 
-              className={`text-xs px-2 py-1 font-medium ${getPriorityColor(task.priority)}`}
-            >
-              {task.priority}
-            </Badge>
-
-            {/* Move to next status button */}
+          {/* Move to next status button */}
+          <div className="flex items-center justify-end">
             {nextStatus && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                 className="h-7 px-2 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation()
                   onMoveTask(task.id, nextStatus)
@@ -116,11 +99,11 @@ export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) 
             )}
           </div>
 
-          {/* Assignee Section */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                     {/* Assignee Section */}
+           <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <User className="h-3 w-3 text-gray-400" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Assignee:</span>
+                             <span className="text-sm text-gray-500 dark:text-gray-400">Assignee:</span>
               
               {isEditingAssignee ? (
                 <Select
@@ -128,19 +111,20 @@ export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) 
                   onValueChange={handleAssigneeChange}
                   onOpenChange={(open: boolean) => !open && setIsEditingAssignee(false)}
                 >
-                  <SelectTrigger className="h-6 w-32 text-xs">
+                                     <SelectTrigger className="h-7 w-32 text-sm">
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member} value={member} className="text-xs">
+                    {assignees.map((assignee) => (
+                                             <SelectItem key={assignee.id} value={assignee.name} className="text-sm">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-4 w-4">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(member)}
+                            <AvatarImage src={assignee.avatar} alt={assignee.name} />
+                            <AvatarFallback className="text-sm">
+                              {getInitials(assignee.name)}
                             </AvatarFallback>
                           </Avatar>
-                          {member}
+                          <span className="truncate">{assignee.name}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -151,16 +135,20 @@ export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) 
                   {task.assignee ? (
                     <>
                       <Avatar className="h-5 w-5">
-                        <AvatarFallback className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                        <AvatarImage 
+                          src={getAssigneeByName(task.assignee)?.avatar} 
+                          alt={task.assignee} 
+                        />
+                                                 <AvatarFallback className="text-sm bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
                           {getInitials(task.assignee)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {task.assignee}
-                      </span>
+                                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                         {task.assignee}
+                       </span>
                     </>
                   ) : (
-                    <span className="text-xs text-gray-400 italic">Unassigned</span>
+                                         <span className="text-sm text-gray-400 italic">Unassigned</span>
                   )}
                   <Button
                     variant="ghost"
@@ -177,8 +165,8 @@ export function TaskCard({ task, onMoveTask, onUpdateAssignee }: TaskCardProps) 
               )}
             </div>
 
-            {/* Date */}
-            <div className="flex items-center text-xs text-gray-400">
+                         {/* Date */}
+             <div className="flex items-center text-sm text-gray-400">
               <Calendar className="h-3 w-3 mr-1" />
               {task.createdAt.toLocaleDateString()}
             </div>
